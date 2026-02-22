@@ -13,12 +13,12 @@ type InvoiceService struct {
 
 // Generate creates a new draft invoice for the given subscription based on
 // current period usage. The invoice starts in "draft" status.
-func (s *InvoiceService) Generate(ctx context.Context, subscriptionID string) (*Invoice, error) {
+func (s *InvoiceService) Generate(ctx context.Context, subscriptionID string, opts ...RequestOption) (*Invoice, error) {
 	var wrapper struct {
 		Invoice Invoice `json:"invoice"`
 	}
 	body := GenerateInvoiceRequest{SubscriptionID: subscriptionID}
-	if err := s.client.do(ctx, "POST", "/v1/invoices/generate", body, &wrapper); err != nil {
+	if err := s.client.do(ctx, "POST", "/v1/invoices/generate", body, &wrapper, opts...); err != nil {
 		return nil, err
 	}
 	return &wrapper.Invoice, nil
@@ -59,22 +59,22 @@ func (s *InvoiceService) Get(ctx context.Context, invoiceID string) (*Invoice, e
 
 // Finalize transitions a draft invoice to "finalized", making it ready for payment.
 // A finalized invoice cannot be edited.
-func (s *InvoiceService) Finalize(ctx context.Context, invoiceID string) (*Invoice, error) {
+func (s *InvoiceService) Finalize(ctx context.Context, invoiceID string, opts ...RequestOption) (*Invoice, error) {
 	var wrapper struct {
 		Invoice Invoice `json:"invoice"`
 	}
-	if err := s.client.do(ctx, "POST", fmt.Sprintf("/v1/invoices/%s/finalize", invoiceID), nil, &wrapper); err != nil {
+	if err := s.client.do(ctx, "POST", fmt.Sprintf("/v1/invoices/%s/finalize", invoiceID), nil, &wrapper, opts...); err != nil {
 		return nil, err
 	}
 	return &wrapper.Invoice, nil
 }
 
 // Void marks an invoice as void, making it no longer payable.
-func (s *InvoiceService) Void(ctx context.Context, invoiceID string) (*Invoice, error) {
+func (s *InvoiceService) Void(ctx context.Context, invoiceID string, opts ...RequestOption) (*Invoice, error) {
 	var wrapper struct {
 		Invoice Invoice `json:"invoice"`
 	}
-	if err := s.client.do(ctx, "POST", fmt.Sprintf("/v1/invoices/%s/void", invoiceID), nil, &wrapper); err != nil {
+	if err := s.client.do(ctx, "POST", fmt.Sprintf("/v1/invoices/%s/void", invoiceID), nil, &wrapper, opts...); err != nil {
 		return nil, err
 	}
 	return &wrapper.Invoice, nil

@@ -11,11 +11,11 @@ type PlanService struct {
 }
 
 // Create defines a new billing plan, optionally with prices attached.
-func (s *PlanService) Create(ctx context.Context, req CreatePlanRequest) (*Plan, error) {
+func (s *PlanService) Create(ctx context.Context, req CreatePlanRequest, opts ...RequestOption) (*Plan, error) {
 	var wrapper struct {
 		Plan Plan `json:"plan"`
 	}
-	if err := s.client.do(ctx, "POST", "/v1/plans", req, &wrapper); err != nil {
+	if err := s.client.do(ctx, "POST", "/v1/plans", req, &wrapper, opts...); err != nil {
 		return nil, err
 	}
 	return &wrapper.Plan, nil
@@ -42,11 +42,11 @@ func (s *PlanService) Get(ctx context.Context, planID string) (*Plan, error) {
 }
 
 // Update modifies an existing plan's name, description, or prices.
-func (s *PlanService) Update(ctx context.Context, planID string, req UpdatePlanRequest) (*Plan, error) {
+func (s *PlanService) Update(ctx context.Context, planID string, req UpdatePlanRequest, opts ...RequestOption) (*Plan, error) {
 	var wrapper struct {
 		Plan Plan `json:"plan"`
 	}
-	if err := s.client.do(ctx, "PUT", fmt.Sprintf("/v1/plans/%s", planID), req, &wrapper); err != nil {
+	if err := s.client.do(ctx, "PUT", fmt.Sprintf("/v1/plans/%s", planID), req, &wrapper, opts...); err != nil {
 		return nil, err
 	}
 	return &wrapper.Plan, nil

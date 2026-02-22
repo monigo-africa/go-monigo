@@ -3,6 +3,7 @@ package monigo
 import (
 	"bytes"
 	"context"
+	"crypto/rand"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -11,6 +12,34 @@ import (
 )
 
 const defaultBaseURL = "https://api.monigo.co"
+
+// requestConfig holds per-request options resolved from RequestOption values.
+type requestConfig struct {
+	idempotencyKey string
+}
+
+// RequestOption configures a single API request.
+type RequestOption func(*requestConfig)
+
+// WithIdempotencyKey sets the Idempotency-Key header on the request.
+// When omitted from a POST, PUT, or PATCH call, the SDK generates a UUID v4
+// automatically so every mutating request is safe to retry.
+func WithIdempotencyKey(key string) RequestOption {
+	return func(c *requestConfig) {
+		c.idempotencyKey = key
+	}
+}
+
+// newUUID returns a randomly-generated UUID v4 using crypto/rand.
+func newUUID() string {
+	var b [16]byte
+	if _, err := rand.Read(b[:]); err != nil {
+		panic("monigo: crypto/rand unavailable: " + err.Error())
+	}
+	b[6] = (b[6] & 0x0f) | 0x40 // version 4
+	b[8] = (b[8] & 0x3f) | 0x80 // variant bits
+	return fmt.Sprintf("%x-%x-%x-%x-%x", b[0:4], b[4:6], b[6:8], b[8:10], b[10:])
+}
 
 // Client is the Monigo API client. Create one with New() and use its
 // resource services to interact with the API.
@@ -86,7 +115,13 @@ func New(apiKey string, opts ...Option) *Client {
 // path must start with "/", e.g. "/v1/customers".
 // body is marshalled to JSON and sent as the request body (pass nil for no body).
 // out is decoded from the JSON response body (pass nil to discard response body).
-func (c *Client) do(ctx context.Context, method, path string, body, out any) error {
+// opts are optional per-request options such as WithIdempotencyKey.
+func (c *Client) do(ctx context.Context, method, path string, body, out any, opts ...RequestOption) error {
+	cfg := &requestConfig{}
+	for _, o := range opts {
+		o(cfg)
+	}
+
 	var bodyReader io.Reader
 	if body != nil {
 		b, err := json.Marshal(body)
@@ -103,6 +138,14 @@ func (c *Client) do(ctx context.Context, method, path string, body, out any) err
 	req.Header.Set("Authorization", "Bearer "+c.apiKey)
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("Accept", "application/json")
+
+	if method == "POST" || method == "PUT" || method == "PATCH" {
+		key := cfg.idempotencyKey
+		if key == "" {
+			key = newUUID()
+		}
+		req.Header.Set("Idempotency-Key", key)
+	}
 
 	resp, err := c.httpClient.Do(req)
 	if err != nil {

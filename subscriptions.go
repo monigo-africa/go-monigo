@@ -13,11 +13,11 @@ type SubscriptionService struct {
 
 // Create subscribes a customer to a plan. Returns a 409 Conflict error
 // (use IsConflict) if the customer already has an active subscription.
-func (s *SubscriptionService) Create(ctx context.Context, req CreateSubscriptionRequest) (*Subscription, error) {
+func (s *SubscriptionService) Create(ctx context.Context, req CreateSubscriptionRequest, opts ...RequestOption) (*Subscription, error) {
 	var wrapper struct {
 		Subscription Subscription `json:"subscription"`
 	}
-	if err := s.client.do(ctx, "POST", "/v1/subscriptions", req, &wrapper); err != nil {
+	if err := s.client.do(ctx, "POST", "/v1/subscriptions", req, &wrapper, opts...); err != nil {
 		return nil, err
 	}
 	return &wrapper.Subscription, nil
@@ -61,12 +61,12 @@ func (s *SubscriptionService) Get(ctx context.Context, subscriptionID string) (*
 
 // UpdateStatus changes the status of a subscription.
 // Use the SubscriptionStatusXxx constants: active, paused, canceled.
-func (s *SubscriptionService) UpdateStatus(ctx context.Context, subscriptionID, status string) (*Subscription, error) {
+func (s *SubscriptionService) UpdateStatus(ctx context.Context, subscriptionID, status string, opts ...RequestOption) (*Subscription, error) {
 	body := map[string]string{"status": status}
 	var wrapper struct {
 		Subscription Subscription `json:"subscription"`
 	}
-	if err := s.client.do(ctx, "PATCH", fmt.Sprintf("/v1/subscriptions/%s", subscriptionID), body, &wrapper); err != nil {
+	if err := s.client.do(ctx, "PATCH", fmt.Sprintf("/v1/subscriptions/%s", subscriptionID), body, &wrapper, opts...); err != nil {
 		return nil, err
 	}
 	return &wrapper.Subscription, nil

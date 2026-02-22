@@ -18,12 +18,12 @@ type EventService struct {
 // safe and will be de-duplicated server-side.
 //
 // Requires an API key with the "ingest" scope.
-func (s *EventService) Ingest(ctx context.Context, req IngestRequest) (*IngestResponse, error) {
+func (s *EventService) Ingest(ctx context.Context, req IngestRequest, opts ...RequestOption) (*IngestResponse, error) {
 	var wrapper struct {
 		Ingested   []string `json:"ingested"`
 		Duplicates []string `json:"duplicates"`
 	}
-	if err := s.client.do(ctx, "POST", "/v1/ingest", req, &wrapper); err != nil {
+	if err := s.client.do(ctx, "POST", "/v1/ingest", req, &wrapper, opts...); err != nil {
 		return nil, err
 	}
 	return &IngestResponse{
@@ -38,7 +38,7 @@ func (s *EventService) Ingest(ctx context.Context, req IngestRequest) (*IngestRe
 // eventName is optional; pass nil to replay all event types in the window.
 //
 // Returns a job record immediately — poll GetReplay to track progress.
-func (s *EventService) StartReplay(ctx context.Context, from, to time.Time, eventName *string) (*EventReplayJob, error) {
+func (s *EventService) StartReplay(ctx context.Context, from, to time.Time, eventName *string, opts ...RequestOption) (*EventReplayJob, error) {
 	body := map[string]any{
 		"from": from.Format(time.RFC3339),
 		"to":   to.Format(time.RFC3339),
@@ -50,7 +50,7 @@ func (s *EventService) StartReplay(ctx context.Context, from, to time.Time, even
 	var wrapper struct {
 		Job EventReplayJob `json:"job"`
 	}
-	if err := s.client.do(ctx, "POST", "/v1/events/replay", body, &wrapper); err != nil {
+	if err := s.client.do(ctx, "POST", "/v1/events/replay", body, &wrapper, opts...); err != nil {
 		return nil, err
 	}
 	return &wrapper.Job, nil

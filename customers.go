@@ -11,11 +11,11 @@ type CustomerService struct {
 }
 
 // Create registers a new customer.
-func (s *CustomerService) Create(ctx context.Context, req CreateCustomerRequest) (*Customer, error) {
+func (s *CustomerService) Create(ctx context.Context, req CreateCustomerRequest, opts ...RequestOption) (*Customer, error) {
 	var wrapper struct {
 		Customer Customer `json:"customer"`
 	}
-	if err := s.client.do(ctx, "POST", "/v1/customers", req, &wrapper); err != nil {
+	if err := s.client.do(ctx, "POST", "/v1/customers", req, &wrapper, opts...); err != nil {
 		return nil, err
 	}
 	return &wrapper.Customer, nil
@@ -43,11 +43,11 @@ func (s *CustomerService) Get(ctx context.Context, customerID string) (*Customer
 
 // Update modifies an existing customer's name, email, or metadata.
 // Only non-zero fields in req are sent; pass zero values to leave fields unchanged.
-func (s *CustomerService) Update(ctx context.Context, customerID string, req UpdateCustomerRequest) (*Customer, error) {
+func (s *CustomerService) Update(ctx context.Context, customerID string, req UpdateCustomerRequest, opts ...RequestOption) (*Customer, error) {
 	var wrapper struct {
 		Customer Customer `json:"customer"`
 	}
-	if err := s.client.do(ctx, "PUT", fmt.Sprintf("/v1/customers/%s", customerID), req, &wrapper); err != nil {
+	if err := s.client.do(ctx, "PUT", fmt.Sprintf("/v1/customers/%s", customerID), req, &wrapper, opts...); err != nil {
 		return nil, err
 	}
 	return &wrapper.Customer, nil

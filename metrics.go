@@ -11,11 +11,11 @@ type MetricService struct {
 }
 
 // Create defines a new billing metric.
-func (s *MetricService) Create(ctx context.Context, req CreateMetricRequest) (*Metric, error) {
+func (s *MetricService) Create(ctx context.Context, req CreateMetricRequest, opts ...RequestOption) (*Metric, error) {
 	var wrapper struct {
 		Metric Metric `json:"metric"`
 	}
-	if err := s.client.do(ctx, "POST", "/v1/metrics", req, &wrapper); err != nil {
+	if err := s.client.do(ctx, "POST", "/v1/metrics", req, &wrapper, opts...); err != nil {
 		return nil, err
 	}
 	return &wrapper.Metric, nil
@@ -44,11 +44,11 @@ func (s *MetricService) Get(ctx context.Context, metricID string) (*Metric, erro
 // Update modifies an existing metric's configuration.
 // Note: metrics that have already been used for billing may be immutable on
 // certain fields — the server will return a 400 in those cases.
-func (s *MetricService) Update(ctx context.Context, metricID string, req UpdateMetricRequest) (*Metric, error) {
+func (s *MetricService) Update(ctx context.Context, metricID string, req UpdateMetricRequest, opts ...RequestOption) (*Metric, error) {
 	var wrapper struct {
 		Metric Metric `json:"metric"`
 	}
-	if err := s.client.do(ctx, "PUT", fmt.Sprintf("/v1/metrics/%s", metricID), req, &wrapper); err != nil {
+	if err := s.client.do(ctx, "PUT", fmt.Sprintf("/v1/metrics/%s", metricID), req, &wrapper, opts...); err != nil {
 		return nil, err
 	}
 	return &wrapper.Metric, nil

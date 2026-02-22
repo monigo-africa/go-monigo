@@ -12,12 +12,12 @@ type PayoutAccountService struct {
 }
 
 // Create adds a new payout account to a customer.
-func (s *PayoutAccountService) Create(ctx context.Context, customerID string, req CreatePayoutAccountRequest) (*PayoutAccount, error) {
+func (s *PayoutAccountService) Create(ctx context.Context, customerID string, req CreatePayoutAccountRequest, opts ...RequestOption) (*PayoutAccount, error) {
 	var wrapper struct {
 		PayoutAccount PayoutAccount `json:"payout_account"`
 	}
 	path := fmt.Sprintf("/v1/customers/%s/payout-accounts", customerID)
-	if err := s.client.do(ctx, "POST", path, req, &wrapper); err != nil {
+	if err := s.client.do(ctx, "POST", path, req, &wrapper, opts...); err != nil {
 		return nil, err
 	}
 	return &wrapper.PayoutAccount, nil
@@ -46,12 +46,12 @@ func (s *PayoutAccountService) Get(ctx context.Context, customerID, accountID st
 }
 
 // Update modifies an existing payout account.
-func (s *PayoutAccountService) Update(ctx context.Context, customerID, accountID string, req UpdatePayoutAccountRequest) (*PayoutAccount, error) {
+func (s *PayoutAccountService) Update(ctx context.Context, customerID, accountID string, req UpdatePayoutAccountRequest, opts ...RequestOption) (*PayoutAccount, error) {
 	var wrapper struct {
 		PayoutAccount PayoutAccount `json:"payout_account"`
 	}
 	path := fmt.Sprintf("/v1/customers/%s/payout-accounts/%s", customerID, accountID)
-	if err := s.client.do(ctx, "PUT", path, req, &wrapper); err != nil {
+	if err := s.client.do(ctx, "PUT", path, req, &wrapper, opts...); err != nil {
 		return nil, err
 	}
 	return &wrapper.PayoutAccount, nil
