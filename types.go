@@ -122,6 +122,8 @@ type Customer struct {
 	ExternalID string          `json:"external_id"`
 	Name       string          `json:"name"`
 	Email      string          `json:"email"`
+	// Phone is the customer's phone number in E.164 format (e.g. +2348012345678).
+	Phone      string          `json:"phone"`
 	Metadata   json.RawMessage `json:"metadata,omitempty"`
 	CreatedAt  time.Time       `json:"created_at"`
 	UpdatedAt  time.Time       `json:"updated_at"`
@@ -134,7 +136,9 @@ type CreateCustomerRequest struct {
 	// Name is the customer's display name.
 	Name string `json:"name"`
 	// Email is the customer's email address.
-	Email string `json:"email"`
+	Email string `json:"email,omitempty"`
+	// Phone is the customer's phone number in E.164 format (e.g. +2348012345678). Optional.
+	Phone string `json:"phone,omitempty"`
 	// Metadata is an optional JSON blob of arbitrary data.
 	Metadata json.RawMessage `json:"metadata,omitempty"`
 }
@@ -144,6 +148,8 @@ type CreateCustomerRequest struct {
 type UpdateCustomerRequest struct {
 	Name     string          `json:"name,omitempty"`
 	Email    string          `json:"email,omitempty"`
+	// Phone is the customer's phone number in E.164 format (e.g. +2348012345678). Optional.
+	Phone    string          `json:"phone,omitempty"`
 	Metadata json.RawMessage `json:"metadata,omitempty"`
 }
 
