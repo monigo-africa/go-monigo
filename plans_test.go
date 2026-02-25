@@ -2,6 +2,7 @@ package monigo_test
 
 import (
 	"context"
+	"encoding/json"
 	"net/http"
 	"testing"
 	"time"
@@ -58,7 +59,7 @@ func TestPlans_Create_WithPrices(t *testing.T) {
 			t.Errorf("expected 1 price, got %d", len(req.Prices))
 		}
 		if req.Prices[0].Model != monigo.PricingModelFlat {
-			t.Errorf("model: got %q, want flat", req.Prices[0].Model)
+			t.Errorf("model: got %q, want %q", req.Prices[0].Model, monigo.PricingModelFlat)
 		}
 		respondJSON(t, w, 201, map[string]any{"plan": samplePlan})
 	}))
@@ -81,23 +82,28 @@ func TestPlans_Create_WithTieredPrices(t *testing.T) {
 		if len(req.Prices) != 1 {
 			t.Errorf("expected 1 price")
 		}
-		if len(req.Prices[0].Tiers) != 2 {
-			t.Errorf("expected 2 tiers, got %d", len(req.Prices[0].Tiers))
+		var tiers []monigo.PriceTier
+		if err := json.Unmarshal(req.Prices[0].Tiers, &tiers); err != nil {
+			t.Fatalf("unmarshal tiers: %v", err)
+		}
+		if len(tiers) != 2 {
+			t.Errorf("expected 2 tiers, got %d", len(tiers))
 		}
 		respondJSON(t, w, 201, map[string]any{"plan": samplePlan})
 	}))
 
 	limit := int64(1000)
+	tiersJSON, _ := json.Marshal([]monigo.PriceTier{
+		{UpTo: &limit, UnitAmount: "1.000000"},
+		{UpTo: nil, UnitAmount: "0.500000"},
+	})
 	_, err := c.Plans.Create(context.Background(), monigo.CreatePlanRequest{
 		Name: "Tiered Plan",
 		Prices: []monigo.CreatePriceRequest{
 			{
 				MetricID: "m-1",
 				Model:    monigo.PricingModelTiered,
-				Tiers: []monigo.PriceTier{
-					{UpTo: &limit, UnitAmount: "1.000000"},
-					{UpTo: nil, UnitAmount: "0.500000"},
-				},
+				Tiers:    tiersJSON,
 			},
 		},
 	})
