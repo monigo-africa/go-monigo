@@ -23,12 +23,20 @@ const (
 // ---------------------------------------------------------------------------
 
 const (
-	PricingModelFlat          = "flat"
-	PricingModelTiered        = "tiered"
-	PricingModelVolume        = "volume"
-	PricingModelPackage       = "package"
-	PricingModelOverage       = "overage"
-	PricingModelWeightedTiered = "weighted_tiered"
+	// PricingModelFlat charges a fixed unit_price per unit, regardless of volume.
+	PricingModelFlat = "flat_unit"
+	// PricingModelPerUnit is an alias for PricingModelFlat.
+	PricingModelPerUnit = "per_unit"
+	// PricingModelTiered applies graduated rates: each unit is charged at the
+	// rate of the tier it falls into. Requires a []PriceTier in Tiers.
+	PricingModelTiered = "tiered"
+	// PricingModelPackage charges per bundle of N units. Partial bundles are
+	// rounded up. Requires a PackageConfig in Tiers.
+	PricingModelPackage = "package"
+	// PricingModelOverage includes a free quota (IncludedUnits) covered by a
+	// flat BasePrice, then charges OveragePrice per unit beyond the quota.
+	// Requires an OverageConfig in Tiers.
+	PricingModelOverage = "overage"
 )
 
 // ---------------------------------------------------------------------------
@@ -212,6 +220,8 @@ type ListMetricsResponse struct {
 // ---------------------------------------------------------------------------
 
 // PriceTier defines one step in a tiered pricing model.
+// Used with PricingModelTiered — pass a []PriceTier marshalled to JSON in
+// CreatePriceRequest.Tiers.
 type PriceTier struct {
 	// UpTo is the upper boundary of this tier (inclusive). A nil value means
 	// "infinity" — this tier applies to all remaining usage.
@@ -221,27 +231,57 @@ type PriceTier struct {
 	UnitAmount string `json:"unit_amount"`
 }
 
+// PackageConfig is the price configuration for PricingModelPackage.
+// Marshal this struct to JSON and set it as CreatePriceRequest.Tiers.
+type PackageConfig struct {
+	// PackageSize is the number of units per bundle.
+	PackageSize int64 `json:"package_size"`
+	// PackagePrice is the price per complete bundle, as a 6-decimal string.
+	PackagePrice string `json:"package_price"`
+	// RoundUpPartialBlock controls whether partial bundles are rounded up
+	// (true) or down/truncated (false). Defaults to true.
+	RoundUpPartialBlock bool `json:"round_up_partial_block"`
+}
+
+// OverageConfig is the price configuration for PricingModelOverage.
+// Marshal this struct to JSON and set it as CreatePriceRequest.Tiers.
+type OverageConfig struct {
+	// IncludedUnits is the free quota covered by BasePrice.
+	// Set to 0 for a pure per-unit overage with no included allowance.
+	IncludedUnits int64 `json:"included_units"`
+	// BasePrice is the flat fee charged for usage up to IncludedUnits,
+	// expressed as a 6-decimal string (e.g. "50.000000").
+	// Set to "0.000000" when there is no base fee.
+	BasePrice string `json:"base_price"`
+	// OveragePrice is the per-unit rate applied to every unit above
+	// IncludedUnits, expressed as a 6-decimal string (e.g. "1.500000").
+	OveragePrice string `json:"overage_price"`
+}
+
 // CreatePriceRequest describes one price to attach to a plan.
 type CreatePriceRequest struct {
 	// MetricID is the UUID of the metric this price is based on.
 	MetricID string `json:"metric_id"`
 	// Model is the pricing model. Use PricingModelXxx constants.
 	Model string `json:"model"`
-	// UnitPrice is the flat price per unit (used for flat/overage/package models).
-	// Express as a decimal string, e.g. "2.500000".
+	// UnitPrice is the flat price per unit for PricingModelFlat / PricingModelPerUnit.
+	// Express as a 6-decimal string, e.g. "2.500000".
 	UnitPrice string `json:"unit_price,omitempty"`
-	// Tiers defines the price steps for tiered/volume/weighted_tiered models.
-	Tiers []PriceTier `json:"tiers,omitempty"`
+	// Tiers holds the model-specific configuration encoded as JSON:
+	//   • PricingModelTiered  → json.Marshal([]PriceTier{...})
+	//   • PricingModelPackage → json.Marshal(PackageConfig{...})
+	//   • PricingModelOverage → json.Marshal(OverageConfig{...})
+	Tiers json.RawMessage `json:"tiers,omitempty"`
 }
 
 // UpdatePriceRequest describes an updated price for a plan.
 type UpdatePriceRequest struct {
 	// ID is the UUID of the price to update. Omit to add a new price.
-	ID        string      `json:"id,omitempty"`
-	MetricID  string      `json:"metric_id,omitempty"`
-	Model     string      `json:"model,omitempty"`
-	UnitPrice string      `json:"unit_price,omitempty"`
-	Tiers     []PriceTier `json:"tiers,omitempty"`
+	ID        string          `json:"id,omitempty"`
+	MetricID  string          `json:"metric_id,omitempty"`
+	Model     string          `json:"model,omitempty"`
+	UnitPrice string          `json:"unit_price,omitempty"`
+	Tiers     json.RawMessage `json:"tiers,omitempty"`
 }
 
 // Price is a pricing rule attached to a plan.
