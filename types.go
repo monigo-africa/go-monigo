@@ -546,6 +546,48 @@ type UsageQueryResult struct {
 }
 
 // ---------------------------------------------------------------------------
+// Portal token types
+// ---------------------------------------------------------------------------
+
+// PortalToken is a single-use shareable link that grants a customer read-only
+// access to their invoices, payout slips, subscriptions, and payout accounts
+// in the Monigo hosted portal.
+type PortalToken struct {
+	ID         string     `json:"id"`
+	OrgID      string     `json:"org_id"`
+	CustomerID string     `json:"customer_id"`
+	// Token is the opaque 64-character hex string embedded in the portal URL.
+	Token      string     `json:"token"`
+	Label      string     `json:"label"`
+	ExpiresAt  *time.Time `json:"expires_at,omitempty"`
+	RevokedAt  *time.Time `json:"revoked_at,omitempty"`
+	CreatedAt  time.Time  `json:"created_at"`
+	UpdatedAt  time.Time  `json:"updated_at"`
+	// PortalURL is the fully-qualified URL to share with the customer.
+	// Example: https://app.monigo.co/portal/<token>
+	PortalURL string `json:"portal_url"`
+}
+
+// CreatePortalTokenRequest is the body for POST /v1/portal/tokens.
+type CreatePortalTokenRequest struct {
+	// CustomerExternalID is the external_id you assigned this customer when
+	// you called Customers.Create.
+	CustomerExternalID string `json:"customer_external_id"`
+	// Label is an optional human-readable name for this link
+	// (e.g. "Main portal link").
+	Label string `json:"label,omitempty"`
+	// ExpiresAt is an optional RFC3339 timestamp after which the token is
+	// automatically rejected. Omit for a permanent link.
+	ExpiresAt string `json:"expires_at,omitempty"`
+}
+
+// ListPortalTokensResponse is returned by GET /v1/portal/tokens.
+type ListPortalTokensResponse struct {
+	Tokens []PortalToken `json:"tokens"`
+	Count  int           `json:"count"`
+}
+
+// ---------------------------------------------------------------------------
 // Event replay types
 // ---------------------------------------------------------------------------
 
