@@ -71,7 +71,6 @@ func TestWallets_GetOrCreate(t *testing.T) {
 	}))
 
 	wallet, err := c.Wallets.GetOrCreate(context.Background(), monigo.GetOrCreateWalletRequest{
-		OrgID:      "org-1",
 		CustomerID: "cust-abc",
 		Currency:   "NGN",
 	})
@@ -86,8 +85,28 @@ func TestWallets_GetOrCreate(t *testing.T) {
 func TestWallets_List(t *testing.T) {
 	c := mockServer(t, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		assertMethod(t, r, "GET")
-		if r.URL.Query().Get("org_id") != "org-1" {
-			t.Errorf("expected org_id=org-1, got %s", r.URL.Query().Get("org_id"))
+		assertPath(t, r, "/v1/wallets")
+		respondJSON(t, w, 200, monigo.ListWalletsResponse{
+			Wallets: []monigo.CustomerWallet{sampleWallet},
+			Count:   1,
+		})
+	}))
+
+	resp, err := c.Wallets.List(context.Background())
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if resp.Count != 1 {
+		t.Errorf("expected count 1, got %d", resp.Count)
+	}
+}
+
+func TestWallets_ListByCustomerID(t *testing.T) {
+	c := mockServer(t, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		assertMethod(t, r, "GET")
+		assertPath(t, r, "/v1/wallets")
+		if r.URL.Query().Get("customer_id") != "cust-abc" {
+			t.Errorf("expected customer_id=cust-abc, got %s", r.URL.Query().Get("customer_id"))
 		}
 		respondJSON(t, w, 200, monigo.ListWalletsResponse{
 			Wallets: []monigo.CustomerWallet{sampleWallet},
@@ -95,7 +114,7 @@ func TestWallets_List(t *testing.T) {
 		})
 	}))
 
-	resp, err := c.Wallets.List(context.Background(), monigo.ListWalletsParams{OrgID: "org-1"})
+	resp, err := c.Wallets.List(context.Background(), monigo.ListWalletsParams{CustomerID: "cust-abc"})
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}

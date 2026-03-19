@@ -677,7 +677,6 @@ type LedgerEntry struct {
 
 // GetOrCreateWalletRequest is the body for POST /v1/wallets.
 type GetOrCreateWalletRequest struct {
-	OrgID      string `json:"org_id"`
 	CustomerID string `json:"customer_id"`
 	Currency   string `json:"currency"`
 }
@@ -711,9 +710,10 @@ type CreateVirtualAccountRequest struct {
 	Currency string `json:"currency"`
 }
 
-// ListWalletsParams are query parameters for GET /v1/wallets.
+// ListWalletsParams are optional query parameters for GET /v1/wallets.
 type ListWalletsParams struct {
-	OrgID string
+	// CustomerID optionally filters wallets to a specific customer (UUID or external_id).
+	CustomerID string
 }
 
 // ListTransactionsParams are query parameters for GET /v1/wallets/{id}/transactions.

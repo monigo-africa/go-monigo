@@ -24,15 +24,13 @@ func (s *WalletService) GetOrCreate(ctx context.Context, req GetOrCreateWalletRe
 	return &wrapper.Wallet, nil
 }
 
-// List returns all wallets for an organisation.
-func (s *WalletService) List(ctx context.Context, params ListWalletsParams) (*ListWalletsResponse, error) {
-	q := url.Values{}
-	if params.OrgID != "" {
-		q.Set("org_id", params.OrgID)
-	}
-
+// List returns all wallets for the authenticated organisation.
+// Pass an optional ListWalletsParams to filter by customer.
+func (s *WalletService) List(ctx context.Context, params ...ListWalletsParams) (*ListWalletsResponse, error) {
 	path := "/v1/wallets"
-	if len(q) > 0 {
+	if len(params) > 0 && params[0].CustomerID != "" {
+		q := url.Values{}
+		q.Set("customer_id", params[0].CustomerID)
 		path = path + "?" + q.Encode()
 	}
 
