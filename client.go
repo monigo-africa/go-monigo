@@ -66,6 +66,8 @@ type Client struct {
 	Usage *UsageService
 	// PortalTokens manages shareable customer portal access links.
 	PortalTokens *PortalTokenService
+	// Wallets manages customer wallets, balance operations, and virtual accounts.
+	Wallets *WalletService
 }
 
 // Option is a functional option for configuring a Client.
@@ -109,6 +111,7 @@ func New(apiKey string, opts ...Option) *Client {
 	c.Invoices = &InvoiceService{client: c}
 	c.Usage = &UsageService{client: c}
 	c.PortalTokens = &PortalTokenService{client: c}
+	c.Wallets = &WalletService{client: c}
 	return c
 }
 

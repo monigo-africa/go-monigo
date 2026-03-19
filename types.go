@@ -588,6 +588,175 @@ type ListPortalTokensResponse struct {
 }
 
 // ---------------------------------------------------------------------------
+// Wallet constants
+// ---------------------------------------------------------------------------
+
+const (
+	// WalletEntryTypeDeposit is a credit from an external funding source.
+	WalletEntryTypeDeposit = "deposit"
+	// WalletEntryTypeWithdrawal is a debit to an external destination.
+	WalletEntryTypeWithdrawal = "withdrawal"
+	// WalletEntryTypeUsage is an automatic debit for metered usage charges.
+	WalletEntryTypeUsage = "usage"
+	// WalletEntryTypeRefund is a credit reversing a previous charge.
+	WalletEntryTypeRefund = "refund"
+	// WalletEntryTypeAdjustment is a manual balance correction.
+	WalletEntryTypeAdjustment = "adjustment"
+)
+
+const (
+	// WalletDirectionDebit reduces the wallet balance.
+	WalletDirectionDebit = "debit"
+	// WalletDirectionCredit increases the wallet balance.
+	WalletDirectionCredit = "credit"
+)
+
+const (
+	VirtualAccountProviderPaystack    = "paystack"
+	VirtualAccountProviderFlutterwave = "flutterwave"
+	VirtualAccountProviderMonnify     = "monnify"
+)
+
+// ---------------------------------------------------------------------------
+// Wallet types
+// ---------------------------------------------------------------------------
+
+// CustomerWallet is a prepaid balance belonging to a single customer.
+// All monetary values are decimal strings (e.g. "100.50").
+type CustomerWallet struct {
+	ID              string    `json:"id"`
+	CustomerID      string    `json:"customer_id"`
+	OrgID           string    `json:"org_id"`
+	Currency        string    `json:"currency"`
+	Balance         string    `json:"balance"`
+	ReservedBalance string    `json:"reserved_balance"`
+	CreatedAt       time.Time `json:"created_at"`
+	UpdatedAt       time.Time `json:"updated_at"`
+}
+
+// VirtualAccount is a dedicated bank account that funds a customer wallet.
+type VirtualAccount struct {
+	ID            string          `json:"id"`
+	CustomerID    string          `json:"customer_id"`
+	WalletID      string          `json:"wallet_id"`
+	OrgID         string          `json:"org_id"`
+	Provider      string          `json:"provider"`
+	AccountNumber string          `json:"account_number"`
+	AccountName   string          `json:"account_name"`
+	BankName      string          `json:"bank_name"`
+	BankCode      string          `json:"bank_code"`
+	Currency      string          `json:"currency"`
+	ProviderRef   string          `json:"provider_ref"`
+	IsActive      bool            `json:"is_active"`
+	Metadata      json.RawMessage `json:"metadata,omitempty"`
+	CreatedAt     time.Time       `json:"created_at"`
+	UpdatedAt     time.Time       `json:"updated_at"`
+}
+
+// LedgerEntry is one side of a double-entry accounting record.
+type LedgerEntry struct {
+	ID             string          `json:"id"`
+	OrgID          string          `json:"org_id"`
+	TransactionID  string          `json:"transaction_id"`
+	WalletID       *string         `json:"wallet_id,omitempty"`
+	AccountType    string          `json:"account_type"`
+	AccountID      string          `json:"account_id"`
+	Direction      string          `json:"direction"`
+	Amount         string          `json:"amount"`
+	Currency       string          `json:"currency"`
+	BalanceBefore  string          `json:"balance_before"`
+	BalanceAfter   string          `json:"balance_after"`
+	Description    string          `json:"description"`
+	EntryType      string          `json:"entry_type"`
+	ReferenceType  string          `json:"reference_type"`
+	ReferenceID    string          `json:"reference_id"`
+	IdempotencyKey string          `json:"idempotency_key"`
+	Metadata       json.RawMessage `json:"metadata,omitempty"`
+	CreatedAt      time.Time       `json:"created_at"`
+}
+
+// GetOrCreateWalletRequest is the body for POST /v1/wallets.
+type GetOrCreateWalletRequest struct {
+	OrgID      string `json:"org_id"`
+	CustomerID string `json:"customer_id"`
+	Currency   string `json:"currency"`
+}
+
+// CreditWalletRequest is the body for POST /v1/wallets/{id}/credit.
+type CreditWalletRequest struct {
+	Amount         string `json:"amount"`
+	Currency       string `json:"currency"`
+	Description    string `json:"description"`
+	EntryType      string `json:"entry_type"`
+	ReferenceType  string `json:"reference_type"`
+	ReferenceID    string `json:"reference_id"`
+	IdempotencyKey string `json:"idempotency_key"`
+	ProviderID     string `json:"provider_id,omitempty"`
+}
+
+// DebitWalletRequest is the body for POST /v1/wallets/{id}/debit.
+type DebitWalletRequest struct {
+	Amount         string `json:"amount"`
+	Currency       string `json:"currency"`
+	Description    string `json:"description"`
+	EntryType      string `json:"entry_type"`
+	ReferenceType  string `json:"reference_type"`
+	ReferenceID    string `json:"reference_id"`
+	IdempotencyKey string `json:"idempotency_key"`
+}
+
+// CreateVirtualAccountRequest is the body for POST /v1/wallets/{id}/virtual-accounts.
+type CreateVirtualAccountRequest struct {
+	Provider string `json:"provider"`
+	Currency string `json:"currency"`
+}
+
+// ListWalletsParams are query parameters for GET /v1/wallets.
+type ListWalletsParams struct {
+	OrgID string
+}
+
+// ListTransactionsParams are query parameters for GET /v1/wallets/{id}/transactions.
+type ListTransactionsParams struct {
+	Limit  int
+	Offset int
+}
+
+// ListWalletsResponse is returned by GET /v1/wallets and
+// GET /v1/customers/{id}/wallets.
+type ListWalletsResponse struct {
+	Wallets []CustomerWallet `json:"wallets"`
+	Count   int              `json:"count"`
+}
+
+// WalletWithVirtualAccountsResponse is returned by GET /v1/wallets/{id}.
+type WalletWithVirtualAccountsResponse struct {
+	Wallet          CustomerWallet   `json:"wallet"`
+	VirtualAccounts []VirtualAccount `json:"virtual_accounts"`
+}
+
+// WalletOperationResponse is returned by POST /v1/wallets/{id}/credit
+// and POST /v1/wallets/{id}/debit.
+type WalletOperationResponse struct {
+	Wallet        CustomerWallet `json:"wallet"`
+	LedgerEntries []LedgerEntry  `json:"ledger_entries"`
+}
+
+// ListTransactionsResponse is returned by GET /v1/wallets/{id}/transactions.
+type ListTransactionsResponse struct {
+	Transactions []LedgerEntry `json:"transactions"`
+	Total        int           `json:"total"`
+	Limit        int           `json:"limit"`
+	Offset       int           `json:"offset"`
+}
+
+// ListVirtualAccountsResponse is returned by GET /v1/wallets/{id}/virtual-accounts.
+type ListVirtualAccountsResponse struct {
+	VirtualAccounts []VirtualAccount `json:"virtual_accounts"`
+	Count           int              `json:"count"`
+}
+
+// ---------------------------------------------------------------------------
 // Event replay types
 // ---------------------------------------------------------------------------
 
